@@ -17,6 +17,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { COLORS, RADIUS, SHADOWS, COMMON_STYLES } from '../../constants/theme';
 import * as amcApi from '../../api/amc';
+import * as storageApi from '../../api/storage';
 import { ApiError } from '../../api/client';
 import { showAlert } from '../../store/useAlertStore';
 
@@ -99,11 +100,30 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
       return;
     }
     try {
+      const photoUrls: string[] = [];
+      for (const uri of photos) {
+        const up = await storageApi.uploadFile({ uri });
+        if (up?.url) photoUrls.push(up.url);
+      }
+      let scheduledAt: string | undefined;
+      if (timeSlot) {
+        const start = timeSlot.split(' - ')[0]?.trim();
+        if (start) {
+          const d = new Date(date);
+          const [time, meridian] = start.split(' ');
+          let [h, m] = time.split(':').map(Number);
+          if (meridian === 'PM' && h < 12) h += 12;
+          if (meridian === 'AM' && h === 12) h = 0;
+          d.setHours(h, m || 0, 0, 0);
+          if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
+        }
+      }
       await amcApi.createDocket({
         priority: 'TIER_3_ROUTINE',
         issueCategory,
         description: description.trim(),
-        photos: photos?.length ? photos : undefined,
+        scheduledAt,
+        photos: photoUrls.length ? photoUrls : undefined,
       });
       showAlert('Submitted', 'Your service request has been created.', [
         { text: 'OK', onPress: () => onNavigate?.('service_request_list') || onBack?.() },

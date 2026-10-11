@@ -427,6 +427,7 @@ export interface CreateDocketPayload {
   subCategory?: string;
   relatedTo?: string;
   preferredContact?: string;
+  scheduledAt?: string;
 }
 
 export interface Docket {
