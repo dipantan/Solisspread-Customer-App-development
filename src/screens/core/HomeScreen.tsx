@@ -46,6 +46,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { firstName } from '../../utils/userDisplay';
 import { quickAddToCart } from '../../utils/cartActions';
 import { discountPercent, formatInr, getRetailPrice, listProducts, productImageSource } from '../../api/catalog';
+import { getContactInfo } from '../../api/settings';
 import type { Product } from '../../api/types';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -66,7 +67,16 @@ export default function HomeScreen({ onNavigate }: { onNavigate?: (step: any, pa
   const user = useAuthStore((s) => s.user);
   const refreshUser = useAuthStore((s) => s.refreshUser);
 
+  const [heroImages, setHeroImages] = useState<any[]>(HERO_IMAGES);
   const [featured, setFeatured] = useState<Product[]>([]);
+
+  useEffect(() => {
+    getContactInfo().then((c) => {
+      if (c.bannerUrls?.length) {
+        setHeroImages(c.bannerUrls.map((uri) => ({ uri })));
+      }
+    }).catch(() => {});
+  }, []);
 
   const loadFeatured = useCallback(async () => {
     try {
@@ -152,7 +162,7 @@ export default function HomeScreen({ onNavigate }: { onNavigate?: (step: any, pa
                 setActiveHeroIndex(index);
               }}
             >
-              {HERO_IMAGES.map((img, index) => (
+              {heroImages.map((img, index) => (
                 <View key={index} style={{ width: Dimensions.get('window').width - 40 }}>
                   <Image
                     source={img}
@@ -164,7 +174,7 @@ export default function HomeScreen({ onNavigate }: { onNavigate?: (step: any, pa
             </ScrollView>
 
             <View style={styles.paginationDots}>
-              {HERO_IMAGES.map((_, idx) => (
+              {heroImages.map((_, idx) => (
                 <View
                   key={idx}
                   style={[

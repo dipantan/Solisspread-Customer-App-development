@@ -6,6 +6,7 @@ export interface StoreContactInfo {
   whatsappNumber?: string | null;
   supportEmail?: string | null;
   website?: string | null;
+  bannerUrls?: string[];
 }
 
 let cache: StoreContactInfo | null = null;
