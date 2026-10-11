@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Solisspread",
+    "slug": "Solisspread",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E4E8C"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.solisspread.customer"
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "in.solisspread.customer",
+      "versionCode": 2,
+      "adaptiveIcon": {
+        "backgroundColor": "#1E4E8C",
+        "foregroundImage": "./assets/icon.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5460b12c-014e-4002-b6e3-7ed31884c6a0"
+      }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}
