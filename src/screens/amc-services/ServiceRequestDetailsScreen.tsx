@@ -24,28 +24,24 @@ const { width } = Dimensions.get('window');
 
 const STATUS_LABELS: Record<string, string> = {
   REQUESTED: 'Pending',
+  TRIAGED: 'Triaged',
   ASSIGNED: 'Assigned',
   EN_ROUTE: 'En Route',
-  ON_SITE: 'On Site',
   ON_SITE_DIAGNOSIS: 'On Site',
-  IN_PROGRESS: 'In Progress',
-  PARTS_PENDING: 'Parts Pending',
+  PARTS_REQUISITION: 'Parts Pending',
   RESOLVED: 'Resolved',
-  CLOSED: 'Closed',
   CLOSED_OTP_VERIFIED: 'Closed',
   CANCELLED: 'Cancelled',
 };
 
 const STEP_TITLES: Record<string, string> = {
   REQUESTED: 'Request Submitted',
+  TRIAGED: 'Triaged',
   ASSIGNED: 'Technician Assigned',
   EN_ROUTE: 'Technician On The Way',
-  ON_SITE: 'Technician Arrived',
-  ON_SITE_DIAGNOSIS: 'Technician Arrived',
-  IN_PROGRESS: 'In Progress',
-  PARTS_PENDING: 'Waiting For Parts',
+  ON_SITE_DIAGNOSIS: 'Diagnosis In Progress',
+  PARTS_REQUISITION: 'Waiting For Parts',
   RESOLVED: 'Service Completed',
-  CLOSED: 'Closed',
   CLOSED_OTP_VERIFIED: 'Closed',
   CANCELLED: 'Cancelled',
 };
