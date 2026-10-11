@@ -18,30 +18,6 @@ import { ApiError } from '../../api/client';
 
 const { width } = Dimensions.get('window');
 
-const REQUESTS_FALLBACK = [
-  {
-    id: 'SR202500123',
-    date: '08 May 2025',
-    category: 'Inverter Issue',
-    product: 'Waaree 5kW Solar System',
-    status: 'In Progress',
-  },
-  {
-    id: 'SR202400981',
-    date: '12 Dec 2024',
-    category: 'Panel Cleaning',
-    product: 'Waaree 5kW Solar System',
-    status: 'Resolved',
-  },
-  {
-    id: 'SR202400452',
-    date: '15 Aug 2024',
-    category: 'Battery Replacement',
-    product: 'Luminous NXG 1100 Solar Inverter',
-    status: 'Resolved',
-  }
-];
-
 export default function ServiceRequestListScreen({ onBack, onNavigate }: { onBack: () => void, onNavigate?: (step: any, params?: any) => void }) {
   const [requests, setRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
@@ -54,14 +30,15 @@ export default function ServiceRequestListScreen({ onBack, onNavigate }: { onBac
           data.map((d) => ({
             id: d.docketNumber || d.id,
             docketId: d.id,
-            title: d.issueCategory || 'Service Request',
+            category: d.issueCategory || 'Service Request',
+            product: d.siteAddress || d.description || '',
             status: d.status || 'OPEN',
             date: d.createdAt ? new Date(d.createdAt).toLocaleDateString('en-IN') : '',
             description: d.description || '',
           })),
         );
       } catch {
-        setRequests(REQUESTS_FALLBACK);
+        setRequests([]);
       } finally {
         setLoadingRequests(false);
       }
@@ -124,10 +101,18 @@ export default function ServiceRequestListScreen({ onBack, onNavigate }: { onBac
       {renderHeader()}
       <View style={styles.container}>
         <FlatList
-          data={requests.length ? requests : REQUESTS_FALLBACK}
+          data={requests}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 40, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 80 }}>
+              <FileText size={40} color={COLORS.textTertiary} />
+              <Text style={{ marginTop: 12, color: COLORS.textSecondary, fontWeight: '600' }}>
+                {loadingRequests ? 'Loading requests...' : 'No service requests yet'}
+              </Text>
+            </View>
+          }
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInDown.delay((index + 1) * 100).springify()}>
               <TouchableOpacity 

@@ -36,31 +36,10 @@ interface CategoriesScreenProps {
 const { width } = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (width - 40 - 24) / 4;
 
-const ALL_CATEGORIES_FALLBACK = [
-  { title: 'Solar Panels', count: '(120+)', image: require('../../../assets/cat_solar_panel.png') },
-  { title: 'Inverters', count: '(80+)', image: require('../../../assets/cat_inverter.png') },
-  { title: 'Batteries', count: '(45+)', image: require('../../../assets/cat_battery.png') },
-  { title: 'Solar Packages', count: '(30+)', image: require('../../../assets/splash_house_solar.png') },
-  { title: 'Accessories', count: '(200+)', image: require('../../../assets/cat_accessories.png') },
-  { title: 'Mounting\nStructures', count: '(60+)', image: require('../../../assets/cat_accessories.png') },
-  { title: 'Cables & Wires', count: '(40+)', image: require('../../../assets/cat_accessories.png') },
-  { title: 'ACDB / DCDB', count: '(25+)', image: require('../../../assets/cat_accessories.png') },
-  { title: 'Charge\nControllers', count: '(15+)', image: require('../../../assets/cat_solar_panel.png') },
-  { title: 'Solar Pumps', count: '(10+)', image: require('../../../assets/cat_inverter.png') },
-  { title: 'Connectors', count: '(50+)', image: require('../../../assets/cat_accessories.png') },
-  { title: 'Tools', count: '(30+)', image: require('../../../assets/cat_accessories.png') },
-  { title: 'Cleaning Kits', count: '(12+)', image: require('../../../assets/splash_house_solar.png') },
-  { title: 'Fuses & Breakers', count: '(45+)', image: require('../../../assets/cat_battery.png') },
-  { title: 'Earthing Kits', count: '(20+)', image: require('../../../assets/cat_accessories.png') },
-  { title: 'Meters', count: '(18+)', image: require('../../../assets/cat_inverter.png') },
-];
-
-const MARQUEE_BRANDS_FALLBACK = ['Waaree', 'Luminous', 'UTL Solar', 'Vikram Solar', 'Adani Solar'];
-
 export default function CategoriesScreen({ onBack, onNavigate }: CategoriesScreenProps) {
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
-  const MARQUEE_BRANDS = brands.length ? brands : MARQUEE_BRANDS_FALLBACK;
+  const MARQUEE_BRANDS = brands;
   const DUPLICATED_BRANDS = [...MARQUEE_BRANDS, ...MARQUEE_BRANDS, ...MARQUEE_BRANDS, ...MARQUEE_BRANDS];
   const [loading, setLoading] = useState(true);
   const fallbackImage = require('../../../assets/cat_solar_panel.png');
@@ -92,8 +71,8 @@ export default function CategoriesScreen({ onBack, onNavigate }: CategoriesScree
 
   const [visibleRows, setVisibleRows] = useState(2);
   const visibleCount = visibleRows * 4;
-  const visibleCategories = (categories.length ? categories : ALL_CATEGORIES_FALLBACK).slice(0, visibleCount);
-  const canShowMore = visibleCount < (categories.length ? categories : ALL_CATEGORIES_FALLBACK).length;
+  const visibleCategories = categories.slice(0, visibleCount);
+  const canShowMore = visibleCount < categories.length;
 
   const handleShowMore = () => {
     setVisibleRows(prev => prev + 2);
@@ -161,6 +140,11 @@ export default function CategoriesScreen({ onBack, onNavigate }: CategoriesScree
 
         {/* Category Grid */}
         <View style={styles.gridContainer}>
+          {!loading && categories.length === 0 && (
+            <Text style={{ width: '100%', textAlign: 'center', color: COLORS.textSecondary, paddingVertical: 32 }}>
+              No categories available yet.
+            </Text>
+          )}
           {visibleCategories.map((item, index) => (
             <AnimatedButton
               key={index}
@@ -185,18 +169,22 @@ export default function CategoriesScreen({ onBack, onNavigate }: CategoriesScree
         )}
 
         {/* Top Brands Marquee */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Brands</Text>
-        </View>
-        <View style={styles.marqueeContainer}>
-          <Animated.View style={marqueeStyle}>
-            {DUPLICATED_BRANDS.map((brand, i) => (
-              <View key={i} style={styles.brandCard}>
-                <Text style={styles.brandPlaceholder}>{brand}</Text>
-              </View>
-            ))}
-          </Animated.View>
-        </View>
+        {MARQUEE_BRANDS.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Top Brands</Text>
+            </View>
+            <View style={styles.marqueeContainer}>
+              <Animated.View style={marqueeStyle}>
+                {DUPLICATED_BRANDS.map((brand, i) => (
+                  <View key={i} style={styles.brandCard}>
+                    <Text style={styles.brandPlaceholder}>{brand}</Text>
+                  </View>
+                ))}
+              </Animated.View>
+            </View>
+          </>
+        )}
 
         {/* Trust Badges Grid */}
         <View style={styles.trustBannerContainer}>

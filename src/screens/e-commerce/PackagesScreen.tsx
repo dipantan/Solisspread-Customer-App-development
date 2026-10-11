@@ -49,103 +49,6 @@ const CATEGORIES = [
   { id: 'custom', label: 'Custom\nPackages', icon: 'grid' },
 ];
 
-const PACKAGES_FALLBACK = [
-  {
-    id: '1',
-    name: '2KW On-Grid\nSolar System',
-    tag: 'BEST VALUE',
-    desc: 'Perfect for Small Homes',
-    output: '2-3 Units/Day',
-    price: '₹1,75,999',
-    oldPrice: '₹1,99,999',
-    discount: '12% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-  {
-    id: '2',
-    name: '3KW On-Grid\nSolar System',
-    tag: 'MOST POPULAR',
-    tagColor: '#EAB308',
-    desc: 'Ideal for Medium Homes',
-    output: '3-4 Units/Day',
-    price: '₹2,59,999',
-    oldPrice: '₹2,99,999',
-    discount: '13% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-  {
-    id: '3',
-    name: '5KW On-Grid\nSolar System',
-    tag: 'HIGH PERFORMANCE',
-    tagColor: '#3B82F6',
-    desc: 'Best for Large Homes',
-    output: '5-6 Units/Day',
-    price: '₹3,82,499',
-    oldPrice: '₹4,49,999',
-    discount: '15% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-  {
-    id: '4',
-    name: '1KW On-Grid\nSolar System',
-    tag: 'BUDGET',
-    tagColor: '#10B981',
-    desc: 'Perfect for Tiny Homes',
-    output: '1-2 Units/Day',
-    price: '₹85,999',
-    oldPrice: '₹99,999',
-    discount: '14% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-  {
-    id: '5',
-    name: '2KW Off-Grid\nSolar System',
-    tag: 'WITH BATTERY',
-    tagColor: '#8B5CF6',
-    desc: 'Areas with power cuts',
-    output: '2-3 Units/Day',
-    price: '₹2,10,999',
-    oldPrice: '₹2,50,999',
-    discount: '15% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-  {
-    id: '6',
-    name: '3KW Off-Grid\nSolar System',
-    tag: 'MOST POPULAR',
-    tagColor: '#EAB308',
-    desc: 'Reliable backup',
-    output: '3-4 Units/Day',
-    price: '₹3,05,999',
-    oldPrice: '₹3,50,999',
-    discount: '12% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-  {
-    id: '7',
-    name: '10KW On-Grid\nSolar System',
-    tag: 'COMMERCIAL',
-    tagColor: '#EF4444',
-    desc: 'Large Buildings',
-    output: '10-12 Units/Day',
-    price: '₹7,50,000',
-    oldPrice: '₹8,50,000',
-    discount: '11% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-  {
-    id: '8',
-    name: '5KW Off-Grid\nSolar System',
-    tag: 'HIGH PERFORMANCE',
-    tagColor: '#3B82F6',
-    desc: 'Ultimate independence',
-    output: '5-6 Units/Day',
-    price: '₹4,90,499',
-    oldPrice: '₹5,60,999',
-    discount: '12% OFF',
-    image: require('../../../assets/solar_inverter_product.png'),
-  },
-];
 
 export default function PackagesScreen({ onBack, onNavigate }: Props) {
   const [activeTab, setActiveTab] = useState('all');
@@ -347,6 +250,11 @@ export default function PackagesScreen({ onBack, onNavigate }: Props) {
         </View>
 
         <View style={styles.packagesGrid}>
+          {!loading && packages.length === 0 && (
+            <Text style={{ width: '100%', textAlign: 'center', color: COLORS.textSecondary, paddingVertical: 32 }}>
+              No packages available yet.
+            </Text>
+          )}
           {packages.slice(0, visibleCount).map((pkg, index) => (
             <PackageCard
               key={pkg.id}
