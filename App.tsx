@@ -300,6 +300,7 @@ export default function App() {
             <ServiceRequestDetailsScreen
               onBack={() => handleNavigate('service_request_list')}
               onNavigate={handleNavigate}
+              id={navParams?.id || navParams?.docketId}
             />
           </Animated.View>
         )}

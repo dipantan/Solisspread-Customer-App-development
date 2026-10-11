@@ -4,8 +4,8 @@ import {
   Text,
   StyleSheet,
   Dimensions,
-  Image,
   BackHandler,
+  Linking,
 } from 'react-native';
 import { AnimatedButton as TouchableOpacity } from '../../components/common/AnimatedButton';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,27 +13,78 @@ import {
   ArrowLeft,
   HeadphonesIcon,
   CheckCircle2,
-  Circle,
   Phone,
   ChevronRight,
-  Star,
-  ShieldCheck,
 } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { COLORS, RADIUS, SHADOWS, COMMON_STYLES } from '../../constants/theme';
+import * as amcApi from '../../api/amc';
 
 const { width } = Dimensions.get('window');
 
-const TIMELINE = [
-  { id: 1, title: 'Request Submitted', date: '08 May 2025, 10:30 AM', desc: 'Your service request has been submitted successfully.', status: 'completed' },
-  { id: 2, title: 'In Progress', date: '08 May 2025, 11:15 AM', desc: 'Our technician has been assigned and is on the way.', status: 'active' },
-  { id: 3, title: 'Technician Arrived', date: 'Pending', desc: '', status: 'pending' },
-  { id: 4, title: 'Service Completed', date: 'Pending', desc: '', status: 'pending' },
-  { id: 5, title: 'Closed', date: 'Pending', desc: '', status: 'pending' },
-];
+const STATUS_LABELS: Record<string, string> = {
+  REQUESTED: 'Pending',
+  ASSIGNED: 'Assigned',
+  EN_ROUTE: 'En Route',
+  ON_SITE: 'On Site',
+  ON_SITE_DIAGNOSIS: 'On Site',
+  IN_PROGRESS: 'In Progress',
+  PARTS_PENDING: 'Parts Pending',
+  RESOLVED: 'Resolved',
+  CLOSED: 'Closed',
+  CLOSED_OTP_VERIFIED: 'Closed',
+  CANCELLED: 'Cancelled',
+};
 
-export default function ServiceRequestDetailsScreen({ onBack, onNavigate }: { onBack: () => void, onNavigate?: (step: any, params?: any) => void }) {
+const STEP_TITLES: Record<string, string> = {
+  REQUESTED: 'Request Submitted',
+  ASSIGNED: 'Technician Assigned',
+  EN_ROUTE: 'Technician On The Way',
+  ON_SITE: 'Technician Arrived',
+  ON_SITE_DIAGNOSIS: 'Technician Arrived',
+  IN_PROGRESS: 'In Progress',
+  PARTS_PENDING: 'Waiting For Parts',
+  RESOLVED: 'Service Completed',
+  CLOSED: 'Closed',
+  CLOSED_OTP_VERIFIED: 'Closed',
+  CANCELLED: 'Cancelled',
+};
+
+const fmtDateTime = (iso?: string | null) =>
+  iso
+    ? new Date(iso).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '—';
+
+export default function ServiceRequestDetailsScreen({
+  onBack,
+  onNavigate,
+  id,
+}: {
+  onBack: () => void;
+  onNavigate?: (step: any, params?: any) => void;
+  id?: string;
+}) {
   const insets = useSafeAreaInsets();
+  const [docket, setDocket] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    amcApi
+      .getDocket(id)
+      .then((d) => setDocket(d))
+      .catch(() => setDocket(null))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   React.useEffect(() => {
     const backAction = () => {
@@ -44,6 +95,33 @@ export default function ServiceRequestDetailsScreen({ onBack, onNavigate }: { on
     return () => backHandler.remove();
   }, [onBack]);
 
+  const logs: any[] = Array.isArray(docket?.logs) ? docket.logs : [];
+  const timeline = logs.length
+    ? logs.map((log: any, idx: number) => ({
+        id: log.id || idx,
+        title: STEP_TITLES[log.newStatus] || log.newStatus,
+        date: fmtDateTime(log.createdAt),
+        desc: log.notes || '',
+        status: idx === logs.length - 1 ? 'active' : 'completed',
+      }))
+    : docket
+      ? [
+          {
+            id: 1,
+            title: 'Request Submitted',
+            date: fmtDateTime(docket.createdAt),
+            desc: 'Your service request has been submitted successfully.',
+            status: 'completed',
+          },
+        ]
+      : [];
+  if (timeline.length > 1) {
+    timeline[timeline.length - 1].status = 'active';
+  }
+
+  const tech = docket?.assignedTechnician?.user || docket?.assignedTechnician;
+  const amcContract = docket?.amcContract;
+
   const renderHeader = () => (
     <View style={[COMMON_STYLES.header, { backgroundColor: COLORS.surface }]}>
       <View style={styles.headerLeft}>
@@ -53,7 +131,7 @@ export default function ServiceRequestDetailsScreen({ onBack, onNavigate }: { on
         <Text style={COMMON_STYLES.headerTitle}>Service Request Details</Text>
       </View>
       <View style={styles.headerRight}>
-        <TouchableOpacity style={styles.helpBtn} onPress={() => {}}>
+        <TouchableOpacity style={styles.helpBtn} onPress={() => onNavigate?.('help_center')}>
           <HeadphonesIcon size={18} color={COLORS.primaryDeep} />
           <Text style={styles.helpText}>Help</Text>
         </TouchableOpacity>
@@ -72,83 +150,89 @@ export default function ServiceRequestDetailsScreen({ onBack, onNavigate }: { on
         <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.reqCard}>
           <Text style={styles.reqLabel}>Request ID</Text>
           <View style={styles.reqIdRow}>
-            <Text style={styles.reqId}>SR202500123</Text>
+            <Text style={styles.reqId}>{docket?.docketNumber || (loading ? '…' : '—')}</Text>
             <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>In Progress</Text>
+              <Text style={styles.statusText}>
+                {STATUS_LABELS[docket?.status] || (loading ? 'Loading' : 'Pending')}
+              </Text>
             </View>
           </View>
-          <Text style={styles.reqDate}>Requested on: 08 May 2025, 10:30 AM</Text>
+          <Text style={styles.reqDate}>Requested on: {fmtDateTime(docket?.createdAt)}</Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
-          <Text style={styles.sectionTitle}>Service Progress</Text>
-          <View style={styles.timelineContainer}>
-            {TIMELINE.map((step, index) => {
-              const isLast = index === TIMELINE.length - 1;
-              return (
-                <View key={step.id} style={styles.timelineItem}>
-                  <View style={styles.timelineLeft}>
-                    {step.status === 'completed' ? (
-                      <View style={styles.iconCircleCompleted}>
-                        <CheckCircle2 size={16} color={COLORS.surface} />
-                      </View>
-                    ) : step.status === 'active' ? (
-                      <View style={styles.iconCircleActive}>
-                        <View style={styles.iconCircleActiveInner} />
-                      </View>
-                    ) : (
-                      <View style={styles.iconCirclePending}>
-                        <CheckCircle2 size={16} color={COLORS.borderDark} />
-                      </View>
-                    )}
-                    {!isLast && <View style={[styles.timelineLine, step.status === 'completed' ? styles.lineCompleted : null]} />}
+        {timeline.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
+            <Text style={styles.sectionTitle}>Service Progress</Text>
+            <View style={styles.timelineContainer}>
+              {timeline.map((step, index) => {
+                const isLast = index === timeline.length - 1;
+                return (
+                  <View key={step.id} style={styles.timelineItem}>
+                    <View style={styles.timelineLeft}>
+                      {step.status === 'completed' ? (
+                        <View style={styles.iconCircleCompleted}>
+                          <CheckCircle2 size={16} color={COLORS.surface} />
+                        </View>
+                      ) : step.status === 'active' ? (
+                        <View style={styles.iconCircleActive}>
+                          <View style={styles.iconCircleActiveInner} />
+                        </View>
+                      ) : (
+                        <View style={styles.iconCirclePending}>
+                          <CheckCircle2 size={16} color={COLORS.borderDark} />
+                        </View>
+                      )}
+                      {!isLast && <View style={[styles.timelineLine, step.status === 'completed' ? styles.lineCompleted : null]} />}
+                    </View>
+                    <View style={styles.timelineRight}>
+                      <Text style={[styles.timelineTitle, step.status === 'pending' && { color: COLORS.textSecondary }]}>{step.title}</Text>
+                      <Text style={styles.timelineDate}>{step.date}</Text>
+                      {!!step.desc && <Text style={styles.timelineDesc}>{step.desc}</Text>}
+                    </View>
                   </View>
-                  <View style={styles.timelineRight}>
-                    <Text style={[styles.timelineTitle, step.status === 'pending' && { color: COLORS.textSecondary }]}>{step.title}</Text>
-                    <Text style={styles.timelineDate}>{step.date}</Text>
-                    {!!step.desc && <Text style={styles.timelineDesc}>{step.desc}</Text>}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </Animated.View>
+                );
+              })}
+            </View>
+          </Animated.View>
+        )}
 
         <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.section}>
           <Text style={styles.sectionTitle}>Request Details</Text>
           <View style={styles.detailsCard}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>AMC Plan</Text>
-              <View style={styles.planLinkRow}>
-                <Text style={styles.detailValueBold}>AMC2025001</Text>
-                <Text style={styles.activeText}> [Active]</Text>
-                <ChevronRight size={16} color={COLORS.primary} style={{ marginLeft: 4 }} />
+            {amcContract && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>AMC Plan</Text>
+                <View style={styles.planLinkRow}>
+                  <Text style={styles.detailValueBold}>{amcContract.contractNumber}</Text>
+                  <Text style={styles.activeText}> [{amcContract.status}]</Text>
+                  <ChevronRight size={16} color={COLORS.primary} style={{ marginLeft: 4 }} />
+                </View>
               </View>
-            </View>
-            
+            )}
+
             <View style={styles.detailGroup}>
               <Text style={styles.detailLabel}>Product</Text>
-              <Text style={styles.detailValue}>Waaree 5kW Solar System</Text>
+              <Text style={styles.detailValue}>{docket?.relatedTo || docket?.siteAddress || docket?.branch?.name || '—'}</Text>
             </View>
-            
+
             <View style={styles.detailGroup}>
               <Text style={styles.detailLabel}>Issue Category</Text>
-              <Text style={styles.detailValueBoldDark}>Inverter Issue</Text>
+              <Text style={styles.detailValueBoldDark}>{docket?.issueCategory || '—'}</Text>
             </View>
 
             <View style={styles.detailGroup}>
               <Text style={styles.detailLabel}>Problem Description</Text>
-              <Text style={styles.detailValue}>Inverter is showing error code E-12 and system is not generating power.</Text>
+              <Text style={styles.detailValue}>{docket?.description || '—'}</Text>
             </View>
 
             <View style={styles.detailGroup}>
               <Text style={styles.detailLabel}>Preferred Date & Time</Text>
-              <Text style={styles.detailValue}>09 May 2025, Morning (9 AM - 12 PM)</Text>
+              <Text style={styles.detailValue}>{docket?.scheduledAt ? fmtDateTime(docket.scheduledAt) : '—'}</Text>
             </View>
 
             <View style={styles.detailGroup}>
               <Text style={styles.detailLabel}>Address</Text>
-              <Text style={styles.detailValue}>123, Green Street, Katwa, Purba Bardhaman, West Bengal - 713150</Text>
+              <Text style={styles.detailValue}>{docket?.siteAddress || '—'}</Text>
             </View>
           </View>
         </Animated.View>
@@ -156,23 +240,31 @@ export default function ServiceRequestDetailsScreen({ onBack, onNavigate }: { on
         <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
           <Text style={styles.sectionTitle}>Technician Details</Text>
           <View style={styles.techCard}>
-            <View style={styles.techInfoRow}>
-              <View style={styles.techAvatarPlaceholder}>
-                <Text style={styles.techAvatarText}>R</Text>
-              </View>
-              <View style={styles.techInfo}>
-                <Text style={styles.techName}>Rahul Kumar</Text>
-                <Text style={styles.techSub}>Technician ID: TECH1025</Text>
-                <Text style={styles.techSub}>Experience: 5+ Years</Text>
-              </View>
-              <View style={styles.techBadge}>
-                <Text style={styles.techBadgeText}>Assigned</Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.callBtn}>
-              <Phone size={16} color={COLORS.primary} />
-              <Text style={styles.callBtnText}>Call Technician</Text>
-            </TouchableOpacity>
+            {tech ? (
+              <>
+                <View style={styles.techInfoRow}>
+                  <View style={styles.techAvatarPlaceholder}>
+                    <Text style={styles.techAvatarText}>{(tech.fullName || 'T').charAt(0).toUpperCase()}</Text>
+                  </View>
+                  <View style={styles.techInfo}>
+                    <Text style={styles.techName}>{tech.fullName}</Text>
+                    {!!tech.phoneNumber && <Text style={styles.techSub}>{tech.phoneNumber}</Text>}
+                  </View>
+                  <View style={styles.techBadge}>
+                    <Text style={styles.techBadgeText}>Assigned</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.callBtn}
+                  onPress={() => tech.phoneNumber && Linking.openURL(`tel:${tech.phoneNumber}`)}
+                >
+                  <Phone size={16} color={COLORS.primary} />
+                  <Text style={styles.callBtnText}>Call Technician</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <Text style={styles.timelineDesc}>A technician will be assigned to your request shortly.</Text>
+            )}
           </View>
         </Animated.View>
 
@@ -193,7 +285,7 @@ export default function ServiceRequestDetailsScreen({ onBack, onNavigate }: { on
               <Text style={styles.helpTitle}>Need Help?</Text>
             </View>
             <Text style={styles.helpSub}>Contact our support team if you need any assistance.</Text>
-            <TouchableOpacity style={styles.contactBtn}>
+            <TouchableOpacity style={styles.contactBtn} onPress={() => onNavigate?.('help_center')}>
               <Text style={styles.contactBtnText}>Contact Support</Text>
             </TouchableOpacity>
           </View>
