@@ -37,17 +37,12 @@ const sameAddress = (a: Pick<Address, 'address' | 'pinCode'>, b: Pick<Address, '
 const isMissingRoute = (e: unknown) =>
   e instanceof ApiError && e.statusCode === 404 && /cannot (patch|delete|put)/i.test(e.message);
 
-/**
- * Older backends return the whole list and only keep the address when it is
- * the default; `local` marks an address the server did not store, which still
- * works for the current checkout.
- */
 export async function createAddress(payload: CreateAddressPayload): Promise<Address> {
   const data = await api.post<Address | Address[]>('/users/addresses', payload);
   if (!Array.isArray(data)) return data;
   const stored = data.find((a) => sameAddress(a, payload));
   if (stored) return stored;
-  return { ...payload, id: `local-${Date.now()}`, isDefault: false, local: true };
+  throw new ApiError('The address was not saved. Please try again.', 0);
 }
 
 export async function updateAddress(id: string, payload: CreateAddressPayload): Promise<Address> {
