@@ -423,6 +423,10 @@ export interface CreateDocketPayload {
   photos?: string[];
   siteAddress?: string;
   docketKind?: DocketKind;
+  subject?: string;
+  subCategory?: string;
+  relatedTo?: string;
+  preferredContact?: string;
 }
 
 export interface Docket {

@@ -318,10 +318,10 @@ export default function CreateTicketScreen({ onBack, onNavigate }: CreateTicketS
                       await amcApi.createDocket({
                         priority: 'TIER_3_ROUTINE',
                         docketKind: 'SUPPORT_TICKET',
-                        issueCategory: category || subCategory || 'General',
-                        description: [relatedTo ? `Related to: ${relatedTo}` : '', description.trim()]
-                          .filter(Boolean)
-                          .join('\n\n'),
+                        issueCategory: category || 'General',
+                        subCategory: subCategory || undefined,
+                        relatedTo: relatedTo || undefined,
+                        description: description.trim(),
                         photos: photoUrls.length ? photoUrls : undefined,
                       });
                       showToast('Help request sent. Our team will get back to you.');
