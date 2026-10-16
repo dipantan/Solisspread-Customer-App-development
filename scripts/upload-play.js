@@ -118,6 +118,7 @@ async function main() {
       track: args.track,
       releases: [
         {
+          name: `${versionCode} (${appJson.version})`,
           versionCodes: [String(versionCode)],
           status: args.status,
           releaseNotes: [{ language: 'en-US', text: notes }],

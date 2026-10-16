@@ -2,7 +2,7 @@
   "expo": {
     "name": "Solisspread",
     "slug": "Solisspread",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,7 +19,7 @@
     "android": {
       "softwareKeyboardLayoutMode": "resize",
       "package": "in.solisspread.customer",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#1E4E8C",
         "foregroundImage": "./assets/icon.png"
