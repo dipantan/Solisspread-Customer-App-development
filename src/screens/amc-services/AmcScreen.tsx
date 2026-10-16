@@ -35,7 +35,18 @@ export default function AmcScreen({ onBack, onNavigate }: { onBack?: () => void,
   const loadAmc = async () => {
     setLoadError(null);
     try {
-      const myPlans = await amcApi.listMyAmcPlans();
+      const [myPlans, amcReqs] = await Promise.all([
+        amcApi.listMyAmcPlans(),
+        amcApi.getMyAmcRequests().catch(() => []),
+      ]);
+
+      const IN_FLIGHT = ['PENDING', 'UNDER_REVIEW', 'APPROVED'];
+      if (Array.isArray(amcReqs) && amcReqs.some((r: any) => IN_FLIGHT.includes(r.status))) {
+        setHasSubmittedAmcRequest(true);
+      } else {
+        setHasSubmittedAmcRequest(false);
+      }
+
       const today = Date.now();
       setContracts(
         myPlans.map((c) => {
@@ -45,7 +56,7 @@ export default function AmcScreen({ onBack, onNavigate }: { onBack?: () => void,
           const expiring = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
           return {
             id: c.contractNumber || c.id,
-            status: expired ? 'Expiring Soon' : expiring ? 'Expiring Soon' : 'Active',
+            status: expired ? 'Expired' : expiring ? 'Expiring Soon' : 'Active',
             title: c.planName || 'AMC Plan',
             instId: c.contractNumber || c.id,
             startDate: c.startDate ? new Date(c.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
@@ -75,8 +86,13 @@ export default function AmcScreen({ onBack, onNavigate }: { onBack?: () => void,
   }, []);
 
   const [expandedPlans, setExpandedPlans] = useState<{ [key: string]: boolean }>({});
-  const [hasSubmittedAmcRequest, setHasSubmittedAmcRequest] = useState(false); // Used to toggle between Buy New AMC and AMC Request Status
+  const [hasSubmittedAmcRequest, setHasSubmittedAmcRequest] = useState(false);
   const scrollY = useSharedValue(0);
+
+  const activeCount = contracts.filter((c) => c.status === 'Active').length;
+  const expiringCount = contracts.filter((c) => c.status === 'Expiring Soon').length;
+  const expiredCount = contracts.filter((c) => c.status === 'Expired').length;
+  const totalCount = contracts.length;
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -113,28 +129,28 @@ export default function AmcScreen({ onBack, onNavigate }: { onBack?: () => void,
                 <View style={[styles.iconCircle, { backgroundColor: COLORS.successLight }]}>
                   <ShieldCheck size={20} color={COLORS.success} />
                 </View>
-                <Text style={[styles.overviewCount, { color: COLORS.successAlt }]}>4</Text>
+                <Text style={[styles.overviewCount, { color: COLORS.successAlt }]}>{activeCount}</Text>
                 <Text style={[styles.overviewLabel, { color: COLORS.success }]}>Active</Text>
               </View>
               <View style={styles.overviewBox}>
                 <View style={[styles.iconCircle, { backgroundColor: COLORS.warning + '20' }]}>
                   <Clock size={20} color={COLORS.warning} />
                 </View>
-                <Text style={[styles.overviewCount, { color: COLORS.warning }]}>1</Text>
+                <Text style={[styles.overviewCount, { color: COLORS.warning }]}>{expiringCount}</Text>
                 <Text style={[styles.overviewLabel, { color: COLORS.warning }]}>Expiring Soon</Text>
               </View>
               <View style={styles.overviewBox}>
                 <View style={[styles.iconCircle, { backgroundColor: COLORS.errorLight }]}>
                   <CalendarX2 size={20} color={COLORS.error} />
                 </View>
-                <Text style={[styles.overviewCount, { color: COLORS.error }]}>0</Text>
+                <Text style={[styles.overviewCount, { color: COLORS.error }]}>{expiredCount}</Text>
                 <Text style={[styles.overviewLabel, { color: COLORS.error }]}>Expired</Text>
               </View>
               <View style={styles.overviewBox}>
                 <View style={[styles.iconCircle, { backgroundColor: COLORS.primary + '15' }]}>
                   <FileText size={20} color={COLORS.primary} />
                 </View>
-                <Text style={[styles.overviewCount, { color: COLORS.primary }]}>5</Text>
+                <Text style={[styles.overviewCount, { color: COLORS.primary }]}>{totalCount}</Text>
                 <Text style={[styles.overviewLabel, { color: COLORS.primary }]}>Total</Text>
               </View>
             </View>
@@ -302,10 +318,10 @@ export default function AmcScreen({ onBack, onNavigate }: { onBack?: () => void,
               </View>
 
               <View style={styles.cardActionsRow}>
-                <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => onNavigate?.('amc_details')}>
+                <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => onNavigate?.('amc_details', { id: plan.id, contractId: plan.id })}>
                   <Text style={styles.viewDetailsBtnText}>View Details</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.serviceRequestBtn} onPress={() => onNavigate?.('request_service')}>
+                <TouchableOpacity style={styles.serviceRequestBtn} onPress={() => onNavigate?.('request_service', { amcContractId: plan.id })}>
                   <Text style={styles.serviceRequestBtnText}>Service Request</Text>
                 </TouchableOpacity>
               </View>

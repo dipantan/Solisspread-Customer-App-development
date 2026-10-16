@@ -20,12 +20,13 @@ export default function RegisterScreen({
   onRegisterSuccess: (identifier: string, purpose?: string) => void;
   onLogin: () => void;
 }) {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [userType, setUserType] = useState<AccountType>(null);
+  const draft = useAuthStore((s) => s.draft);
+  const [step, setStep] = useState<1 | 2>(draft.phoneNumber || draft.customerType ? 2 : 1);
+  const [userType, setUserType] = useState<AccountType>(draft.customerType ?? null);
   
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState(draft.fullName || '');
+  const [email, setEmail] = useState(draft.email || '');
+  const [phone, setPhone] = useState(draft.phoneNumber || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -36,6 +37,13 @@ export default function RegisterScreen({
   const [emailError, setEmailError] = useState('');
   const registerCustomer = useAuthStore((s) => s.registerCustomer);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (draft.customerType) setUserType(draft.customerType);
+    if (draft.fullName) setFullName(draft.fullName);
+    if (draft.email) setEmail(draft.email);
+    if (draft.phoneNumber) setPhone(draft.phoneNumber);
+  }, [draft]);
 
   const handleNext = () => {
     if (!userType) {

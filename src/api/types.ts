@@ -378,15 +378,44 @@ export interface AmcPlan {
 
 export interface AmcContract {
   id: string;
-  contractNumber: string;
-  planName: string;
-  system: string;
-  validUpto: string;
-  status: string;
-  totalVisitsAllocated: number;
-  visitsCompleted: number;
-  startDate: string;
-  endDate: string;
+  contractNumber?: string;
+  planName?: string;
+  system?: string;
+  validUpto?: string;
+  status?: string;
+  totalVisitsAllocated?: number;
+  visitsCompleted?: number;
+  startDate?: string;
+  endDate?: string;
+  plan?: {
+    id?: string;
+    name?: string;
+    description?: string;
+    durationMonths?: number;
+    visitFrequencyMonths?: number;
+    price?: number | string;
+    spareDiscountPercent?: number;
+  };
+  title?: string;
+  amount?: number | string;
+  paymentMethod?: string;
+  project?: {
+    id?: string;
+    name?: string;
+    address?: string;
+    installationAddress?: string;
+    projectNumber?: string;
+    capacityKw?: number;
+    systemType?: string;
+    [key: string]: any;
+  };
+  product?: {
+    id?: string;
+    name?: string;
+  };
+  address?: string;
+  dockets?: any[];
+  [key: string]: unknown;
 }
 
 export interface RequestAmcPayload {

@@ -198,7 +198,11 @@ export default function HomeScreen({ onNavigate }: { onNavigate?: (step: any, pa
                   Enter your electricity bill{'\n'}and get your estimate
                 </Text>
 
-                <TouchableOpacity style={styles.calcButton} activeOpacity={0.85}>
+                <TouchableOpacity
+                  style={styles.calcButton}
+                  activeOpacity={0.85}
+                  onPress={() => onNavigate?.('solar_calculator')}
+                >
                   <Text style={styles.calcButtonText}>Calculate Now</Text>
                   <ArrowRight size={14} color={COLORS.surface} style={{ marginLeft: 4 }} />
                 </TouchableOpacity>

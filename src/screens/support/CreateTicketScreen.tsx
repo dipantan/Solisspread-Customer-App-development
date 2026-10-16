@@ -31,6 +31,7 @@ import MainLayout from '../../layouts/MainLayout';
 import Animated, { FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import * as amcApi from '../../api/amc';
 import * as storageApi from '../../api/storage';
+import * as ordersApi from '../../api/orders';
 import { ApiError } from '../../api/client';
 import { showAlert, showToast } from '../../store/useAlertStore';
 
@@ -43,10 +44,10 @@ interface CreateTicketScreenProps {
 
 const CATEGORIES = ['Technical Issue', 'General Query', 'Account & Billing', 'Installation', 'Other'];
 const SUB_CATEGORIES = ['Inverter', 'Solar Panels', 'Battery', 'Registration', 'Payment', 'AMC'];
-const RELATED_ITEMS = ['Waaree 5kW Solar System', 'Exide 150Ah Battery', 'Luminous 3kVA Inverter'];
 
 export default function CreateTicketScreen({ onBack, onNavigate }: CreateTicketScreenProps) {
   const insets = useSafeAreaInsets();
+  const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [contactMethod, setContactMethod] = useState<'email' | 'phone'>('email');
   
@@ -54,6 +55,7 @@ export default function CreateTicketScreen({ onBack, onNavigate }: CreateTicketS
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
   const [relatedTo, setRelatedTo] = useState('');
+  const [relatedItems, setRelatedItems] = useState<string[]>([]);
   
   // Modal State
   const [isSelectModalVisible, setIsSelectModalVisible] = useState(false);
@@ -61,6 +63,19 @@ export default function CreateTicketScreen({ onBack, onNavigate }: CreateTicketS
   
   // Images State
   const [mediaItems, setMediaItems] = useState<ImagePicker.ImagePickerAsset[]>([]);
+
+  useEffect(() => {
+    ordersApi.listOrders().then((orders) => {
+      const names = new Set<string>();
+      orders.forEach((o) => {
+        (o.items || []).forEach((it) => {
+          const n = it.product?.name;
+          if (n) names.add(n);
+        });
+      });
+      setRelatedItems(Array.from(names));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const backAction = () => {
@@ -98,7 +113,7 @@ export default function CreateTicketScreen({ onBack, onNavigate }: CreateTicketS
   const getOptionsList = () => {
     if (selectType === 'category') return CATEGORIES;
     if (selectType === 'subCategory') return SUB_CATEGORIES;
-    return RELATED_ITEMS;
+    return relatedItems.length ? relatedItems : ['No purchased products found'];
   };
 
   const getModalTitle = () => {
@@ -205,6 +220,8 @@ export default function CreateTicketScreen({ onBack, onNavigate }: CreateTicketS
                     style={styles.textInput}
                     placeholder="Briefly describe your issue"
                     placeholderTextColor={COLORS.textTertiary}
+                    value={subject}
+                    onChangeText={setSubject}
                   />
                 </View>
               </View>
@@ -318,9 +335,11 @@ export default function CreateTicketScreen({ onBack, onNavigate }: CreateTicketS
                       await amcApi.createDocket({
                         priority: 'TIER_3_ROUTINE',
                         docketKind: 'SUPPORT_TICKET',
+                        subject: subject.trim() || category || 'Support Ticket',
                         issueCategory: category || 'General',
                         subCategory: subCategory || undefined,
                         relatedTo: relatedTo || undefined,
+                        preferredContact: contactMethod === 'phone' ? 'Phone' : 'Email',
                         description: description.trim(),
                         photos: photoUrls.length ? photoUrls : undefined,
                       });

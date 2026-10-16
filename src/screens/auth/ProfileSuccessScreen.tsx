@@ -55,7 +55,19 @@ const AnimatedSuccessSvg = () => {
   );
 };
 
+import { BackHandler } from 'react-native';
+import { useNavigationStore } from '../../store/useNavigationStore';
+
 export default function ProfileSuccessScreen({ onGoHome }: { onGoHome: () => void }) {
+  useEffect(() => {
+    const backAction = () => {
+      useNavigationStore.getState().setShowExitModal(true);
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>

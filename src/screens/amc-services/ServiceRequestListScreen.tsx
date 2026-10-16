@@ -25,7 +25,7 @@ export default function ServiceRequestListScreen({ onBack, onNavigate }: { onBac
   useEffect(() => {
     (async () => {
       try {
-        const data = await amcApi.listDockets();
+        const data = await amcApi.listServiceRequests();
         setRequests(
           data.map((d) => ({
             id: d.docketNumber || d.id,

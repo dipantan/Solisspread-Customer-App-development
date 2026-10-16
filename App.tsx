@@ -106,6 +106,10 @@ export default function App() {
     useNavigationStore.getState().navigate(step, params);
   };
 
+  const handleBack = () => {
+    useNavigationStore.getState().goBack();
+  };
+
   return (
     <SafeAreaProvider style={styles.container}>
       <View style={styles.container}>
@@ -151,7 +155,7 @@ export default function App() {
         {currentStep === 'profile' && (
           <CompleteProfileScreen
             onSave={() => setCurrentStep('success')}
-            onBack={() => setCurrentStep('otp')}
+            onBack={() => setShowExitModal(true)}
           />
         )}
         {currentStep === 'success' && (
@@ -169,43 +173,43 @@ export default function App() {
         )}
         {currentStep === 'search' && (
           <Animated.View entering={MOTION.modalSlideUp} exiting={MOTION.modalSlideDown} style={styles.absoluteFill}>
-            <SearchScreen onBack={() => setCurrentStep(previousStep)} />
+            <SearchScreen onBack={handleBack} />
           </Animated.View>
         )}
         {currentStep === 'filter' && (
           <Animated.View entering={MOTION.modalSlideUp} exiting={MOTION.modalSlideDown} style={styles.absoluteFill}>
-            <FilterScreen onBack={() => setCurrentStep(previousStep)} onApply={() => setCurrentStep(previousStep)} />
+            <FilterScreen onBack={handleBack} onApply={handleBack} />
           </Animated.View>
         )}
         {currentStep === 'categories' && (
           <Animated.View entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft} style={styles.absoluteFill}>
-            <CategoriesScreen onBack={() => setCurrentStep(previousStep)} onNavigate={handleNavigate} />
+            <CategoriesScreen onBack={handleBack} onNavigate={handleNavigate} />
           </Animated.View>
         )}
         {currentStep === 'packages' && (
           <Animated.View entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft} style={styles.absoluteFill}>
-            <PackagesScreen onBack={() => setCurrentStep(previousStep)} onNavigate={handleNavigate} />
+            <PackagesScreen onBack={handleBack} onNavigate={handleNavigate} />
           </Animated.View>
         )}
         {currentStep === 'products' && (
           <Animated.View entering={MOTION.modalSlideUp} exiting={MOTION.modalSlideDown} style={styles.absoluteFill}>
-            <ProductsScreen onBack={() => setCurrentStep(previousStep)} onNavigate={handleNavigate} brand={navParams?.brand ?? undefined} />
+            <ProductsScreen onBack={handleBack} onNavigate={handleNavigate} brand={navParams?.brand ?? undefined} />
           </Animated.View>
         )}
         {currentStep === 'productDetails' && (
           <Animated.View entering={MOTION.modalSlideUp} exiting={MOTION.modalSlideDown} style={styles.absoluteFill}>
-            <ProductDetailsScreen onBack={() => setCurrentStep(previousStep)} onNavigate={handleNavigate} type={navParams?.type || 'product'} productId={navParams?.id || navParams?.productId} />
+            <ProductDetailsScreen onBack={handleBack} onNavigate={handleNavigate} type={navParams?.type || 'product'} productId={navParams?.id || navParams?.productId} />
           </Animated.View>
         )}
         {currentStep === 'cart' && (
           <Animated.View entering={MOTION.modalSlideUp} exiting={MOTION.modalSlideDown} style={styles.absoluteFill}>
-            <CartScreen onBack={() => setCurrentStep(previousStep)} onNavigate={handleNavigate} />
+            <CartScreen onBack={handleBack} onNavigate={handleNavigate} />
           </Animated.View>
         )}
         {currentStep === 'checkout' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <CheckoutScreen
-              onBack={() => handleNavigate(previousStep)}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -224,7 +228,7 @@ export default function App() {
         {currentStep === 'orderHistory' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <OrderHistoryScreen
-              onBack={() => handleNavigate(previousStep)}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -232,7 +236,7 @@ export default function App() {
         {currentStep === 'trackOrder' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <TrackOrderScreen
-              onBack={() => handleNavigate(previousStep)}
+              onBack={handleBack}
               onNavigate={handleNavigate}
               orderId={navParams?.id || navParams?.orderId}
             />
@@ -241,7 +245,7 @@ export default function App() {
         {currentStep === 'orderDetails' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <OrderDetailsScreen
-              onBack={() => handleNavigate(previousStep)}
+              onBack={handleBack}
               onNavigate={handleNavigate}
               orderId={navParams?.id || navParams?.orderId}
             />
@@ -250,7 +254,7 @@ export default function App() {
         {currentStep === 'amc' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <AmcScreen
-              onBack={() => handleNavigate(previousStep)}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -258,7 +262,7 @@ export default function App() {
         {currentStep === 'buy_amc' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <BuyAmcScreen
-              onBack={() => handleNavigate('amc')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -266,15 +270,16 @@ export default function App() {
         {currentStep === 'request_service' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <RequestServiceScreen
-              onBack={() => handleNavigate('amc')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
+              amcContractId={navParams?.amcContractId || navParams?.id}
             />
           </Animated.View>
         )}
         {currentStep === 'service_request_list' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <ServiceRequestListScreen
-              onBack={() => handleNavigate('amc')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -282,23 +287,27 @@ export default function App() {
         {currentStep === 'amc_request_status' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <AmcRequestStatusScreen
-              onBack={() => handleNavigate('amc')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
+              id={navParams?.id || navParams?.requestId}
+              requestId={navParams?.requestId || navParams?.id}
             />
           </Animated.View>
         )}
         {currentStep === 'amc_details' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <AmcDetailsScreen
-              onBack={() => handleNavigate('amc')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
+              id={navParams?.id || navParams?.contractId}
+              contractId={navParams?.contractId || navParams?.id}
             />
           </Animated.View>
         )}
         {currentStep === 'service_request_details' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <ServiceRequestDetailsScreen
-              onBack={() => handleNavigate('service_request_list')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
               id={navParams?.id || navParams?.docketId}
             />
@@ -307,6 +316,7 @@ export default function App() {
         {currentStep === 'solar_calculator' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <SolarCalculatorScreen
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -314,7 +324,7 @@ export default function App() {
         {currentStep === 'saved_addresses' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <SavedAddressesScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -322,7 +332,7 @@ export default function App() {
         {currentStep === 'support_tickets' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <SupportTicketsScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -330,7 +340,7 @@ export default function App() {
         {currentStep === 'help_center' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <HelpCenterScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -338,7 +348,7 @@ export default function App() {
         {currentStep === 'faqs' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <FaqsScreen
-              onBack={() => handleNavigate('help_center')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
               categoryId={navParams?.categoryId}
             />
@@ -347,7 +357,7 @@ export default function App() {
         {currentStep === 'create_ticket' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <CreateTicketScreen
-              onBack={() => handleNavigate('support_tickets')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -355,15 +365,18 @@ export default function App() {
         {currentStep === 'ticket_details' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <TicketDetailsScreen
-              onBack={() => handleNavigate('support_tickets')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
+              id={navParams?.id || navParams?.ticketId || navParams?.docketId}
+              ticketId={navParams?.ticketId || navParams?.id}
+              docketId={navParams?.docketId || navParams?.id}
             />
           </Animated.View>
         )}
         {currentStep === 'edit_profile' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageFadeIn} exiting={MOTION.pageFadeOut}>
             <EditProfileScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -371,7 +384,7 @@ export default function App() {
         {currentStep === 'change_password' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <ChangePasswordScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -379,7 +392,7 @@ export default function App() {
         {currentStep === 'security' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <SecurityScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -387,7 +400,7 @@ export default function App() {
         {currentStep === 'about_us' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <AboutUsScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -395,7 +408,7 @@ export default function App() {
         {currentStep === 'terms' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <TermsScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -403,7 +416,7 @@ export default function App() {
         {currentStep === 'privacy' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <PrivacyPolicyScreen
-              onBack={() => handleNavigate('privacy_center')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -411,7 +424,7 @@ export default function App() {
         {currentStep === 'delete_account' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <DeleteAccountScreen
-              onBack={() => handleNavigate('privacy_center')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -419,7 +432,7 @@ export default function App() {
         {currentStep === 'privacy_center' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <PrivacyCenterScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -427,7 +440,7 @@ export default function App() {
         {currentStep === 'request_data' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <RequestDataScreen
-              onBack={() => handleNavigate('privacy_center')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -435,7 +448,7 @@ export default function App() {
         {currentStep === 'consent_management' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <ConsentManagementScreen
-              onBack={() => handleNavigate('privacy_center')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -443,7 +456,7 @@ export default function App() {
         {currentStep === 'grievance_redressal' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <GrievanceRedressalScreen
-              onBack={() => handleNavigate('privacy_center')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -451,7 +464,7 @@ export default function App() {
         {currentStep === 'deactivate_account' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <DeactivateAccountScreen
-              onBack={() => handleNavigate('privacy_center')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -459,7 +472,7 @@ export default function App() {
         {currentStep === 'refer_earn' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <ReferAndEarnScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>
@@ -467,7 +480,7 @@ export default function App() {
         {currentStep === 'referral_history' && (
           <Animated.View style={StyleSheet.absoluteFill} entering={MOTION.pageSlideInRight} exiting={MOTION.pageSlideOutLeft}>
             <ReferralHistoryScreen
-              onBack={() => handleNavigate('home')}
+              onBack={handleBack}
               onNavigate={handleNavigate}
             />
           </Animated.View>

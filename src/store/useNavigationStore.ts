@@ -57,6 +57,7 @@ const SESSION_KEY = '@app_session_step';
 interface NavigationState {
   currentStep: AppStep;
   previousStep: AppStep;
+  history: AppStep[];
   initialRoute: AppStep;
   showExitModal: boolean;
   navParams: any;
@@ -64,6 +65,7 @@ interface NavigationState {
   paramsByStep: Partial<Record<AppStep, any>>;
   setCurrentStep: (step: AppStep) => void;
   navigate: (step: AppStep, params?: any) => void;
+  goBack: () => void;
   setShowExitModal: (visible: boolean) => void;
   setInitialRoute: (step: AppStep) => void;
   loadSession: () => Promise<void>;
@@ -71,30 +73,78 @@ interface NavigationState {
   clearSession: () => Promise<void>;
 }
 
+const ROOT_STEPS: AppStep[] = ['login', 'onboarding', 'profile', 'success', 'home'];
+
 export const useNavigationStore = create<NavigationState>((set, get) => ({
   currentStep: 'splash',
   previousStep: 'home',
+  history: [],
   initialRoute: 'onboarding',
   showExitModal: false,
   navParams: null,
   paramsByStep: {},
   setCurrentStep: (step) => {
+    const current = get().currentStep;
+    const history = [...get().history];
+    if (current && current !== step && current !== 'splash') {
+      history.push(current);
+    }
     set({
-      previousStep: get().currentStep,
+      history,
+      previousStep: current,
       currentStep: step,
       navParams: get().paramsByStep[step] ?? null,
     });
     void get().persistSession(step);
   },
   navigate: (step, params) => {
+    const current = get().currentStep;
     const resolved = params ?? get().paramsByStep[step] ?? null;
+    const history = [...get().history];
+
+    // If navigating to main root screens, clear stack to avoid back recursion
+    if (ROOT_STEPS.includes(step)) {
+      history.length = 0;
+    } else if (current && current !== step && current !== 'splash') {
+      history.push(current);
+    }
+
     set({
-      previousStep: get().currentStep,
+      history,
+      previousStep: current,
       currentStep: step,
       navParams: resolved,
       paramsByStep: params ? { ...get().paramsByStep, [step]: params } : get().paramsByStep,
     });
     void get().persistSession(step);
+  },
+  goBack: () => {
+    const { history, currentStep, paramsByStep } = get();
+    if (history.length > 0) {
+      const newHistory = [...history];
+      const previous = newHistory.pop()!;
+      set({
+        history: newHistory,
+        previousStep: newHistory[newHistory.length - 1] ?? 'home',
+        currentStep: previous,
+        navParams: paramsByStep[previous] ?? null,
+      });
+      void get().persistSession(previous);
+      return;
+    }
+
+    // Stack is empty: if on root screen, show exit confirmation modal
+    if (ROOT_STEPS.includes(currentStep)) {
+      set({ showExitModal: true });
+    } else {
+      // Fallback to home
+      set({
+        previousStep: currentStep,
+        currentStep: 'home',
+        navParams: null,
+      });
+      void get().persistSession('home');
+    }
   },
   setShowExitModal: (visible) => set({ showExitModal: visible }),
   setInitialRoute: (step) => set({ initialRoute: step }),
@@ -120,7 +170,7 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     }
   },
   clearSession: async () => {
-    set({ paramsByStep: {}, navParams: null });
+    set({ history: [], paramsByStep: {}, navParams: null });
     try {
       await AsyncStorage.removeItem(SESSION_KEY);
     } catch {

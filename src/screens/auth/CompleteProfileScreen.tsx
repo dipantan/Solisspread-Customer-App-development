@@ -1,6 +1,6 @@
 import { COLORS } from '../../constants/theme';
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, BackHandler } from 'react-native';
 import { AnimatedButton as TouchableOpacity } from '../../components/common/AnimatedButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, User, Phone, MapPin, Hash } from 'lucide-react-native';
@@ -8,6 +8,7 @@ import { InputField } from '../../components/common/InputField';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ApiError } from '../../api/client';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNavigationStore } from '../../store/useNavigationStore';
 
 interface CompleteProfileScreenProps {
   onSave: () => void;
@@ -27,6 +28,15 @@ export default function CompleteProfileScreen({ onSave, onBack }: CompleteProfil
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
+  useEffect(() => {
+    const backAction = () => {
+      useNavigationStore.getState().setShowExitModal(true);
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, []);
+
   const handleSave = async () => {
     setFormError('');
     if (!address.trim() || !city.trim() || !stateName.trim() || pinCode.trim().length !== 6) {
@@ -41,6 +51,7 @@ export default function CompleteProfileScreen({ onSave, onBack }: CompleteProfil
         state: stateName.trim(),
         pinCode: pinCode.trim(),
       });
+      void useNavigationStore.getState().persistSession('home');
       onSave();
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : e?.message || 'Could not save your profile';
@@ -64,7 +75,11 @@ export default function CompleteProfileScreen({ onSave, onBack }: CompleteProfil
         showsVerticalScrollIndicator={false}
       >
         {/* Top Back Navigation Arrow */}
-        <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => useNavigationStore.getState().setShowExitModal(true)}
+          activeOpacity={0.7}
+        >
           <ArrowLeft size={24} color={COLORS.primaryNavy} />
         </TouchableOpacity>
 

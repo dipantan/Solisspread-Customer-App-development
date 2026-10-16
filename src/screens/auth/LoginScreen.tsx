@@ -91,7 +91,11 @@ export default function LoginScreen({
         showsVerticalScrollIndicator={false}
       >
         {/* Top Back Navigation Arrow */}
-        <TouchableOpacity style={styles.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          onPress={() => useNavigationStore.getState().setShowExitModal(true)}
+        >
           <ArrowLeft size={24} color={COLORS.primaryNavy} />
         </TouchableOpacity>
 

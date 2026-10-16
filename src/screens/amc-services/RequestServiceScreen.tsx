@@ -23,7 +23,15 @@ import { showAlert } from '../../store/useAlertStore';
 
 const { width } = Dimensions.get('window');
 
-export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: () => void, onNavigate?: (step: any, params?: any) => void }) {
+export default function RequestServiceScreen({
+  onBack,
+  onNavigate,
+  amcContractId,
+}: {
+  onBack: () => void;
+  onNavigate?: (step: any, params?: any) => void;
+  amcContractId?: string;
+}) {
   const insets = useSafeAreaInsets();
 
   React.useEffect(() => {
@@ -40,7 +48,31 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
 
   const [issueCategory, setIssueCategory] = React.useState('');
   const [description, setDescription] = React.useState('');
+  const [notes, setNotes] = React.useState('');
   const [showCategoryModal, setShowCategoryModal] = React.useState(false);
+
+  const [plans, setPlans] = React.useState<any[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = React.useState<string | null>(amcContractId || null);
+  const [showPlanModal, setShowPlanModal] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    amcApi
+      .listMyAmcPlans()
+      .then((items) => {
+        setPlans(items);
+        if (amcContractId) {
+          const match = items.find((p) => p.id === amcContractId);
+          if (match) setSelectedPlanId(match.id);
+          else if (items.length > 0) setSelectedPlanId(items[0].id);
+        } else if (items.length > 0) {
+          setSelectedPlanId(items[0].id);
+        }
+      })
+      .catch(() => {});
+  }, [amcContractId]);
+
+  const selectedContract = plans.find((p) => p.id === selectedPlanId) || (plans.length > 0 ? plans[0] : null);
 
   const [photos, setPhotos] = React.useState<string[]>([]);
 
@@ -86,7 +118,7 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
         <Text style={COMMON_STYLES.headerTitle}>Request Service</Text>
       </View>
       <View style={styles.headerRight}>
-        <TouchableOpacity style={styles.helpBtn} onPress={() => { }}>
+        <TouchableOpacity style={styles.helpBtn} onPress={() => onNavigate?.('help_center')}>
           <HeadphonesIcon size={18} color={COLORS.primaryDeep} />
           <Text style={styles.helpText}>Help</Text>
         </TouchableOpacity>
@@ -95,10 +127,15 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
   );
 
   const handleSubmitRequest = async () => {
-    if (!issueCategory || !description.trim()) {
-      showAlert('Missing details', 'Please select an issue category and add a description.');
+    if (!issueCategory) {
+      showAlert('Missing category', 'Please select an issue category.');
       return;
     }
+    if (!description.trim()) {
+      showAlert('Missing details', 'Please describe the issue in detail.');
+      return;
+    }
+    setSubmitting(true);
     try {
       const photoUrls: string[] = [];
       for (const uri of photos) {
@@ -118,18 +155,29 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
           if (!isNaN(d.getTime())) scheduledAt = d.toISOString();
         }
       }
+      const fullDescription = [
+        description.trim(),
+        notes.trim() ? `Additional Notes: ${notes.trim()}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
       await amcApi.createDocket({
+        docketKind: 'SERVICE_REQUEST',
         priority: 'TIER_3_ROUTINE',
         issueCategory,
-        description: description.trim(),
+        description: fullDescription,
         scheduledAt,
         photos: photoUrls.length ? photoUrls : undefined,
+        amcContractId: selectedContract?.id,
       });
-      showAlert('Submitted', 'Your service request has been created.', [
-        { text: 'OK', onPress: () => onNavigate?.('service_request_list') || onBack?.() },
+      showAlert('Submitted', 'Your service request has been created successfully.', [
+        { text: 'View Requests', onPress: () => onNavigate?.('service_request_list') || onBack() },
       ]);
     } catch (e: any) {
       showAlert('Error', e instanceof ApiError ? e.message : e?.message || 'Failed to create service request');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -153,19 +201,61 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
-          <Text style={styles.sectionTitle}>Select AMC Plan</Text>
-          <TouchableOpacity style={styles.planCard} activeOpacity={0.8}>
-            <View style={styles.planHeader}>
-              <Text style={styles.planId}>AMC2025001</Text>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>Active</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={styles.sectionTitle}>Select AMC Plan</Text>
+            {plans.length > 1 && (
+              <TouchableOpacity onPress={() => setShowPlanModal(true)}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.primary }}>Change</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {selectedContract ? (
+            <TouchableOpacity
+              style={styles.planCard}
+              activeOpacity={plans.length > 1 ? 0.8 : 1}
+              onPress={() => {
+                if (plans.length > 1) setShowPlanModal(true);
+              }}
+            >
+              <View style={styles.planHeader}>
+                <Text style={styles.planId}>
+                  {selectedContract.contractNumber || selectedContract.id?.slice(0, 10) || 'AMC Contract'}
+                </Text>
+                <View style={styles.statusBadge}>
+                  <Text style={styles.statusText}>{selectedContract.status || 'Active'}</Text>
+                </View>
               </View>
+              <View style={styles.planDetailsRow}>
+                <Text style={styles.planTitle}>
+                  {selectedContract.planName || selectedContract.plan?.name || selectedContract.system || 'Solar System'}
+                </Text>
+              </View>
+              <Text style={styles.planValid}>
+                Valid Till:{' '}
+                {selectedContract.validUpto ||
+                  (selectedContract.endDate
+                    ? new Date(selectedContract.endDate).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : 'Active')}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={[styles.planCard, { borderColor: COLORS.borderDark, backgroundColor: COLORS.surface }]}>
+              <View style={styles.planHeader}>
+                <Text style={styles.planId}>General Service</Text>
+                <View style={[styles.statusBadge, { backgroundColor: '#F3F4F6' }]}>
+                  <Text style={[styles.statusText, { color: COLORS.textSecondary }]}>On-Demand</Text>
+                </View>
+              </View>
+              <View style={styles.planDetailsRow}>
+                <Text style={styles.planTitle}>No active AMC plan linked</Text>
+              </View>
+              <Text style={styles.planValid}>Standard diagnostics and service rates apply.</Text>
             </View>
-            <View style={styles.planDetailsRow}>
-              <Text style={styles.planTitle}>Waaree 5kW Solar System</Text>
-            </View>
-            <Text style={styles.planValid}>Valid Till: 10 May 2026</Text>
-          </TouchableOpacity>
+          )}
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.section}>
@@ -190,8 +280,11 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
                 placeholderTextColor={COLORS.textTertiary}
                 multiline
                 textAlignVertical="top"
-               value={description} onChangeText={setDescription} />
-              <Text style={styles.charCount}>0/300</Text>
+                value={description}
+                onChangeText={setDescription}
+                maxLength={300}
+              />
+              <Text style={styles.charCount}>{description.length}/300</Text>
             </View>
           </View>
         </Animated.View>
@@ -252,15 +345,22 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
                 placeholderTextColor={COLORS.textTertiary}
                 multiline
                 textAlignVertical="top"
+                value={notes}
+                onChangeText={setNotes}
+                maxLength={200}
               />
-              <Text style={styles.charCount}>0/200</Text>
+              <Text style={styles.charCount}>{notes.length}/200</Text>
             </View>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(700).springify()} style={styles.actionContainer}>
-          <TouchableOpacity style={styles.submitBtn}>
-            <Text style={styles.submitBtnText}>Submit Request</Text>
+          <TouchableOpacity
+            style={[styles.submitBtn, submitting && { opacity: 0.7 }]}
+            onPress={handleSubmitRequest}
+            disabled={submitting}
+          >
+            <Text style={styles.submitBtnText}>{submitting ? 'Submitting...' : 'Submit Request'}</Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -275,6 +375,28 @@ export default function RequestServiceScreen({ onBack, onNavigate }: { onBack: (
       </Animated.ScrollView>
 
       {/* Modals */}
+      <Modal visible={showPlanModal} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPlanModal(false)}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select AMC Contract</Text>
+            {plans.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={styles.modalItem}
+                onPress={() => {
+                  setSelectedPlanId(p.id);
+                  setShowPlanModal(false);
+                }}
+              >
+                <Text style={[styles.modalItemText, selectedPlanId === p.id && { color: COLORS.primary, fontWeight: '700' }]}>
+                  {p.contractNumber || p.id?.slice(0, 8)} - {p.planName || p.system || 'Plan'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <Modal visible={showCategoryModal} transparent animationType="fade">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCategoryModal(false)}>
           <View style={styles.modalContent}>
